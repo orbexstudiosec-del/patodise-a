@@ -140,8 +140,6 @@ if [ -f .env ]; then
 fi
 
 if [ -z "$SKIP_ENV" ]; then
-    cp .env.example .env
-
     ask "Dominio del sitio (sin https://) [patomolina.com]: " DOMAIN
     DOMAIN=${DOMAIN:-patomolina.com}
 
@@ -151,24 +149,65 @@ if [ -z "$SKIP_ENV" ]; then
     ask "  Usuario de la BD      : " DB_USER
     ask "  Contraseña de la BD   : " DB_PASS
 
-    # Reemplazar valores en .env
-    sed -i.bak "s|^APP_NAME=.*|APP_NAME=\"Pato Diseña\"|" .env
-    sed -i.bak "s|^APP_ENV=.*|APP_ENV=production|" .env
-    sed -i.bak "s|^APP_DEBUG=.*|APP_DEBUG=false|" .env
-    sed -i.bak "s|^APP_URL=.*|APP_URL=https://$DOMAIN|" .env
-    sed -i.bak "s|^DB_CONNECTION=.*|DB_CONNECTION=mysql|" .env
-    sed -i.bak "s|^# DB_HOST=.*|DB_HOST=127.0.0.1|" .env
-    sed -i.bak "s|^DB_HOST=.*|DB_HOST=127.0.0.1|" .env
-    sed -i.bak "s|^# DB_PORT=.*|DB_PORT=3306|" .env
-    sed -i.bak "s|^DB_PORT=.*|DB_PORT=3306|" .env
-    sed -i.bak "s|^# DB_DATABASE=.*|DB_DATABASE=$DB_NAME|" .env
-    sed -i.bak "s|^DB_DATABASE=.*|DB_DATABASE=$DB_NAME|" .env
-    sed -i.bak "s|^# DB_USERNAME=.*|DB_USERNAME=$DB_USER|" .env
-    sed -i.bak "s|^DB_USERNAME=.*|DB_USERNAME=$DB_USER|" .env
-    sed -i.bak "s|^# DB_PASSWORD=.*|DB_PASSWORD=$DB_PASS|" .env
-    sed -i.bak "s|^DB_PASSWORD=.*|DB_PASSWORD=$DB_PASS|" .env
-    rm -f .env.bak
-    ok ".env configurado"
+    # Escapar comillas dobles en la contraseña por si las tiene
+    DB_PASS_ESC=$(printf '%s' "$DB_PASS" | sed 's/"/\\"/g')
+
+    # Escribir .env de cero (más robusto que sed)
+    cat > .env <<ENVEOF
+APP_NAME="Pato Diseña"
+APP_ENV=production
+APP_KEY=
+APP_DEBUG=false
+APP_URL=https://${DOMAIN}
+
+APP_LOCALE=es
+APP_FALLBACK_LOCALE=es
+APP_FAKER_LOCALE=es_ES
+
+APP_MAINTENANCE_DRIVER=file
+BCRYPT_ROUNDS=12
+
+LOG_CHANNEL=stack
+LOG_STACK=single
+LOG_DEPRECATIONS_CHANNEL=null
+LOG_LEVEL=warning
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=${DB_NAME}
+DB_USERNAME=${DB_USER}
+DB_PASSWORD="${DB_PASS_ESC}"
+
+SESSION_DRIVER=database
+SESSION_LIFETIME=120
+SESSION_ENCRYPT=false
+SESSION_PATH=/
+SESSION_DOMAIN=null
+
+BROADCAST_CONNECTION=log
+FILESYSTEM_DISK=local
+QUEUE_CONNECTION=database
+
+CACHE_STORE=database
+
+REDIS_CLIENT=phpredis
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+
+MAIL_MAILER=log
+MAIL_SCHEME=null
+MAIL_HOST=127.0.0.1
+MAIL_PORT=2525
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+MAIL_FROM_ADDRESS="hola@${DOMAIN}"
+MAIL_FROM_NAME="\${APP_NAME}"
+
+VITE_APP_NAME="\${APP_NAME}"
+ENVEOF
+    ok ".env configurado correctamente"
 fi
 
 # -----------------------------------------------------------------------------
